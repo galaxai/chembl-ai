@@ -3,3 +3,5 @@
 *.gz
 *.db
 .env
+
+*.parquet
