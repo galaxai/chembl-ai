@@ -37,8 +37,6 @@ WHERE act.standard_type IN {STD_TYPES}
     ass.assay_tax_id IN {assay_tax_id})
 """
 
-print(SQL)
-
 if __name__ == "__main__":
     from .helpers import export_sql_dataset
 
