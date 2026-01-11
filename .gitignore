@@ -1,5 +1,8 @@
 .ipynb_checkpoints/
+*.pyc
 *.tar.gz
 *.gz
 *.db
 .env
+
+*.parquet
