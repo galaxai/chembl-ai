@@ -2,6 +2,7 @@
 Ports used:
 - Spark Master UI: `8080`
 - Spark master RPC: `7077`
+- Spark Connect: `15002`
 - Airflow UI: host `8081` -> (container `8080`)
 
 ## Run Docker Compose directly

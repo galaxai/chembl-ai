@@ -5,47 +5,25 @@ services:
     ports:
       - '8080:8080'
       - '7077:7077'
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+      - '15002:15002'
+
+    command: |
+      bash -c '
+        # Start the Spark Master daemon
+        /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master &
+
+        # Start Spark Connect server for remote client connections
+        /opt/spark/sbin/start-connect-server.sh \
+          --master spark://spark-master:7077 \
+          --conf spark.connect.grpc.binding.address=0.0.0.0 \
+          --conf spark.connect.grpc.binding.port=15002 &
+
+        # Keep container running
+        wait'
+
     hostname: spark-master
-    networks:
-      - spark-net
-
-  spark-worker-1:
-    image: apache/spark:4.1.0
-    container_name: spark-worker-1
-    environment:
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-    depends_on:
-      - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    hostname: spark-worker-1
-    networks:
-      - spark-net
-
-  spark-worker-2:
-    image: apache/spark:4.1.0
-    container_name: spark-worker-2
-    environment:
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-    depends_on:
-      - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    hostname: spark-worker-2
-    networks:
-      - spark-net
-
-  spark-worker-3:
-    image: apache/spark:4.1.0
-    container_name: spark-worker-3
-    environment:
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-    depends_on:
-      - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    hostname: spark-worker-3
+    volumes:
+        - ../data/chembl_36/exports:/data/chembl_36/exports:ro
     networks:
       - spark-net
 
@@ -67,6 +45,68 @@ services:
       - spark-master
     networks:
       - spark-net
+
+  spark-worker-1:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-1
+    environment:
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    hostname: spark-worker-1
+    volumes:
+      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+    networks:
+      - spark-net
+
+  spark-worker-2:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-2
+    environment:
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    hostname: spark-worker-2
+    volumes:
+      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+    networks:
+      - spark-net
+
+  spark-worker-3:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-3
+    environment:
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    hostname: spark-worker-3
+    volumes:
+      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+    networks:
+      - spark-net
+
+
+  spark-worker-4:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-4
+    environment:
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    hostname: spark-worker-4
+    volumes:
+      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+    networks:
+      - spark-net
+
 
 networks:
   spark-net:
