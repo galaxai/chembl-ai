@@ -2,7 +2,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
 
-def add_pCI(df: DataFrame) -> DataFrame:
+def add_pIC(df: DataFrame) -> DataFrame:
     """Filter to valid nM activities and add a `pIC` column.
 
     The calculation converts `standard_value` nM to molar and
@@ -28,7 +28,7 @@ def preprocess_data(df: DataFrame) -> DataFrame:
 
     Current steps:
     1. Drop rows containing nulls.
-    2. Add `pIC` via :func:`add_pCI`.
+    2. Add `pIC` via :func:`add_pIC`.
 
 
     Returns:
@@ -36,5 +36,5 @@ def preprocess_data(df: DataFrame) -> DataFrame:
     """
 
     df = df.na.drop()
-    df = add_pCI(df)
+    df = add_pIC(df)
     return df
