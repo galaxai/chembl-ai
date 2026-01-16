@@ -1,6 +1,20 @@
+import pyarrow as pa
+
 ## PATHS
 BATCH_SIZE = 100_000
 NAME = "assay"
+
+SCHEMA = pa.schema(
+    [
+        ("assay_id", pa.int64()),
+        ("assay_type", pa.string()),
+        ("assay_organism", pa.string()),
+        ("assay_tax_id", pa.int64()),
+        ("tid", pa.int64()),
+        ("doc_id", pa.int64()),
+        ("chembl_id", pa.string()),
+    ]
+)
 ## FILTERS ##
 organism = ("Homo sapiens", "Mus musculus", "Rattus norvegicus")
 assay_tax_id = (9606, 10090, 10116)
@@ -34,4 +48,5 @@ if __name__ == "__main__":
         name=NAME,
         sql=SQL,
         batch_size=BATCH_SIZE,
+        schema=SCHEMA,
     )
