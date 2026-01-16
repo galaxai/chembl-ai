@@ -39,8 +39,6 @@ SSH Tunnel:
 - `putter` is your VM server.
 - Run the following to forward Spark and Airflow UIs:
 
-ocker exec -it airflow-standalone python -c "import mlflow; print(mlflow.__version__)"
-
 
 ```bash
 ssh -fN \
