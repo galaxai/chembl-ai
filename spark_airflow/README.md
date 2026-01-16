@@ -36,8 +36,8 @@ MLflow:
 - Local artifacts are stored in `spark_airflow/mlruns/`.
 
 SSH Tunnel:
-- `putter` is your VM server.
-- Run the following to forward Spark and Airflow UIs:
+- `putter` is your VM server hosting Spark UI (8080), Airflow UI (8081), and MLflow (5000).
+- Run the following to forward Spark, Airflow, and MLflow UIs:
 
 
 ```bash
