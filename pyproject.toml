@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "pyarrow>=22.0.0",
     "pyspark[connect]==4.1.0",
+    "rdkit>=2025.9.3",
     "tinygrad>=0.12.0",
 ]
 
