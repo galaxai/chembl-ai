@@ -27,22 +27,52 @@ services:
     networks:
       - spark-net
 
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.8.1
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlruns/mlflow.db
+      --default-artifact-root /mlruns
+      --allowed-hosts mlflow,mlflow:5000,localhost,localhost:5000,127.0.0.1
+    volumes:
+      - ./mlruns:/mlruns
+    networks:
+      - spark-net
+
   airflow:
-    image: apache/airflow:2.7.1
+    image: apache/airflow:3.1.6-python3.12
     container_name: airflow-standalone
     env_file:
       - .env
     environment:
-      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
       - _AIRFLOW_DB_MIGRATE=true
       - _AIRFLOW_WWW_USER_CREATE=true
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_ARTIFACT_URI=/mlruns
+      - PIP_ADDITIONAL_REQUIREMENTS=apache-airflow-providers-fab==3.1.1
     ports:
       - "8081:8080"
-    command: bash -c 'airflow db migrate && airflow users create --username "${_AIRFLOW_WWW_USER_USERNAME}" --password "${_AIRFLOW_WWW_USER_PASSWORD}" --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME}" --lastname "${_AIRFLOW_WWW_USER_LASTNAME}" --role Admin --email "${_AIRFLOW_WWW_USER_EMAIL}" 2>/dev/null || true && airflow webserver -p 8080 & airflow scheduler'
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./mlruns:/mlruns
+    command: >
+      bash -c 'airflow db migrate &&
+      pip install --no-cache-dir mlflow==3.8.1 &&
+      airflow users create --username "${_AIRFLOW_WWW_USER_USERNAME}" --password "${_AIRFLOW_WWW_USER_PASSWORD}" --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME}" --lastname "${_AIRFLOW_WWW_USER_LASTNAME}" --role Admin --email "${_AIRFLOW_WWW_USER_EMAIL}" 2>/dev/null || true &&
+      airflow api-server -p 8080 &
+      airflow scheduler &
+      airflow dag-processor &
+      wait'
     depends_on:
       - spark-master
+      - mlflow
     networks:
       - spark-net
 

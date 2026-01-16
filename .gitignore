@@ -4,5 +4,6 @@
 *.gz
 *.db
 .env
+spark_airflow/mlruns/
 
 *.parquet
