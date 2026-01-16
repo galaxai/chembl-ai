@@ -1,20 +1,26 @@
 from collections.abc import Sequence
+from typing import Any
 
 import pyarrow as pa
 from rdkit import Chem
 from rdkit.Chem import rdFingerprintGenerator
 
+_MORGAN_FPGEN = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
 
-def smiles_to_morgan_fp(smiles: str | None) -> list[int] | None:
+
+def smiles_to_morgan_fp(
+    smiles: str | None,
+    *,
+    mfpgen: Any = _MORGAN_FPGEN,
+) -> list[int] | None:
     if not smiles:
         return None
 
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
-        return None
-
     try:
-        mfpgen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return None
+
         fp = mfpgen.GetFingerprintAsNumPy(mol)
         return fp.tolist()
     except Exception:
