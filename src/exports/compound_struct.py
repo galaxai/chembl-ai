@@ -1,30 +1,43 @@
 from collections.abc import Sequence
 from typing import Any
 
+import numpy as np
 import pyarrow as pa
-from rdkit import Chem
+from rdkit import Chem, DataStructs
 from rdkit.Chem import rdFingerprintGenerator
 
 _MORGAN_FPGEN = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
 
 
-def smiles_to_morgan_fp(
-    smiles: str | None,
+def smiles_batch_to_morgan_fps(
+    smiles_list: Sequence[str | None],
     *,
     mfpgen: Any = _MORGAN_FPGEN,
-) -> list[int] | None:
-    if not smiles:
-        return None
+) -> list[list[int] | None]:
+    """Convert a batch of SMILES to Morgan fingerprints efficiently."""
+    results: list[list[int] | None] = [None] * len(smiles_list)
+    mols = []
+    indices = []
+    for i, smiles in enumerate(smiles_list):
+        if not smiles:
+            continue
 
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            return None
+        try:
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                continue
+            mols.append(mol)
+            indices.append(i)
+        except Exception:
+            continue
 
-        fp = mfpgen.GetFingerprintAsNumPy(mol)
-        return fp.tolist()
-    except Exception:
-        return None
+    fps = mfpgen.GetFingerprints(mols, numThreads=8)
+
+    for idx, fp in zip(indices, fps):
+        fp_array = np.zeros(fp.GetNumBits(), dtype=np.uint8)
+        DataStructs.ConvertToNumpyArray(fp, fp_array)
+        results[idx] = fp_array.tolist()
+    return results
 
 
 def rows_to_batch(rows: Sequence[tuple], names: Sequence[str]) -> pa.RecordBatch:
@@ -33,8 +46,9 @@ def rows_to_batch(rows: Sequence[tuple], names: Sequence[str]) -> pa.RecordBatch
 
     names_list = list(names)
     data_idx = names_list.index("canonical_smiles")
+
     morgan_fp = pa.array(
-        [smiles_to_morgan_fp(s) for s in cols[data_idx]],
+        smiles_batch_to_morgan_fps(cols[data_idx]),
         type=pa.list_(pa.uint8()),
     )
 
