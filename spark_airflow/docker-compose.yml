@@ -65,7 +65,7 @@ services:
     command: >
       bash -c 'airflow db migrate &&
       pip install --no-cache-dir mlflow==3.8.1 &&
-      (airflow users create --username "${_AIRFLOW_WWW_USER_USERNAME}" --password "${_AIRFLOW_WWW_USER_PASSWORD}" --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME}" --lastname "${_AIRFLOW_WWW_USER_LASTNAME}" --role Admin --email "${_AIRFLOW_WWW_USER_EMAIL}" 2>/dev/null || true) &&
+      ((airflow users create --username "${_AIRFLOW_WWW_USER_USERNAME}" --password "${_AIRFLOW_WWW_USER_PASSWORD}" --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME}" --lastname "${_AIRFLOW_WWW_USER_LASTNAME}" --role Admin --email "${_AIRFLOW_WWW_USER_EMAIL}" 2>/dev/null) || true) &&
       airflow api-server -p 8080 &
       airflow scheduler &
       airflow dag-processor &
