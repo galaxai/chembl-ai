@@ -23,7 +23,7 @@ def add_pIC(df: DataFrame) -> DataFrame:
     ).withColumn("pIC", -F.log10(F.col("standard_value") * F.lit(1e-9)))
 
 
-def preprocess_data(df: DataFrame) -> DataFrame:
+def preprocess_activity(df: DataFrame) -> DataFrame:
     """Apply the default preprocessing pipeline.
 
     Current steps:
