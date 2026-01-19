@@ -3,14 +3,9 @@ from pyspark.sql import DataFrame, SparkSession
 
 from src.transforms import preprocess_activity
 
-spark = (
-    SparkSession.builder.appName("chembl-parquet")
-    .remote("sc://localhost:15002")
-    .getOrCreate()
-)
-
 
 def _load_base_df(spark) -> DataFrame:
+    """Load and join activity, assay, and structure parquet sources."""
     base = "/data/chembl_36/exports"
     activity = spark.read.parquet(f"{base}/activity")
     assay = spark.read.parquet(f"{base}/assay")
@@ -37,6 +32,7 @@ def chembl(
     val_split: float = 0.2,
     seed: int = 42,
 ):
+    """Return train/val splits of ChEMBL activity data."""
     df = _load_base_df(spark)
     human = F.col("assay_organism") == "Homo sapiens"
     human_df = df.filter(human)
@@ -49,6 +45,11 @@ def chembl(
 
 
 if __name__ == "__main__":
+    spark = (
+        SparkSession.builder.appName("chembl-parquet")
+        .remote("sc://localhost:15002")
+        .getOrCreate()
+    )
     train, val = chembl(fingerprint=True)
     train.write.mode("overwrite").parquet("/data/chembl_36/fp_train")
     val.write.mode("overwrite").parquet("/data/chembl_36/fp_val")

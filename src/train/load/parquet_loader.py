@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 from typing import Generator
 
@@ -8,6 +9,8 @@ from tinygrad.tensor import Tensor
 
 
 class ParquetDataLoader:
+    """Stream parquet rows in mini-batches as tinygrad tensors."""
+
     def __init__(
         self,
         dir: str,
@@ -18,6 +21,7 @@ class ParquetDataLoader:
         shuffle: bool = True,
         drop_last: bool = True,
     ):
+        """Initialize loader settings and seed RNGs."""
         self.dir = dir
         self.X = X
         self.Y = Y
@@ -27,6 +31,7 @@ class ParquetDataLoader:
         self.drop_last = drop_last
 
         Tensor.manual_seed(self.seed)
+        random.seed(self.seed)
 
         ## Load the data
         self.data = list(Path(self.dir).glob("*.parquet"))
@@ -38,12 +43,10 @@ class ParquetDataLoader:
             )
 
     def __iter__(self) -> Generator[tuple[Tensor, Tensor], None, None]:
+        """Yield batches of feature/label tensors from parquet rows."""
         if self.shuffle:
-            indices = Tensor.randperm(len(self.data)).tolist()
-            files = [self.data[i] for i in indices]
-        else:
-            files = self.data
-        data = ds.dataset(files)
+            random.shuffle(self.data)
+        data = ds.dataset(self.data)
 
         def batch_to_tensors(batch: pa.RecordBatch) -> tuple[Tensor, Tensor]:
             x = Tensor(np.stack(batch[self.X].to_numpy(zero_copy_only=False)))
@@ -68,6 +71,7 @@ class ParquetDataLoader:
             yield batch_to_tensors(remainder_batch)
 
     def __len__(self) -> int:
+        """Return the number of batches implied by dataset size."""
         import math
 
         if not hasattr(self, "_num_batches"):
