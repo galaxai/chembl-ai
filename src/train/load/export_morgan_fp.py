@@ -35,8 +35,6 @@ def chembl(
     *,
     fingerprint: bool = False,
     val_split: float = 0.2,
-    bs: int = 512,
-    dtype=int,
     seed: int = 42,
 ):
     df = _load_base_df(spark)
@@ -51,6 +49,6 @@ def chembl(
 
 
 if __name__ == "__main__":
-    train, val = chembl()
-    train.show(5)
-    val.show(5)
+    train, val = chembl(fingerprint=True)
+    train.write.mode("overwrite").parquet("/data/chembl_36/fp_train")
+    val.write.mode("overwrite").parquet("/data/chembl_36/fp_val")

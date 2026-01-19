@@ -23,7 +23,7 @@ services:
 
     hostname: spark-master
     volumes:
-        - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+        - ../data/chembl_36/:/data/chembl_36/
     networks:
       - spark-net
 
@@ -87,7 +87,7 @@ services:
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     hostname: spark-worker-1
     volumes:
-      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+      - ../data/chembl_36/:/data/chembl_36/
     networks:
       - spark-net
 
@@ -102,7 +102,7 @@ services:
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     hostname: spark-worker-2
     volumes:
-      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+      - ../data/chembl_36/:/data/chembl_36/
     networks:
       - spark-net
 
@@ -117,7 +117,7 @@ services:
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     hostname: spark-worker-3
     volumes:
-      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+      - ../data/chembl_36/:/data/chembl_36/
     networks:
       - spark-net
 
@@ -133,7 +133,7 @@ services:
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     hostname: spark-worker-4
     volumes:
-      - ../data/chembl_36/exports:/data/chembl_36/exports:ro
+      - ../data/chembl_36/:/data/chembl_36/
     networks:
       - spark-net
 
