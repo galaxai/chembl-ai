@@ -49,6 +49,7 @@ class ParquetDataLoader:
         data = ds.dataset(self.data)
 
         def batch_to_tensors(batch: pa.RecordBatch) -> tuple[Tensor, Tensor]:
+            # TODO: add helper function to detect zero_copy_only
             x = Tensor(np.stack(batch[self.X].to_numpy(zero_copy_only=False)))
             y = Tensor(batch[self.Y].to_numpy(zero_copy_only=True))
             return x, y

@@ -28,7 +28,7 @@ def _load_base_df(spark) -> DataFrame:
 
 def chembl(
     *,
-    fingerprint: bool = False,
+    spark: SparkSession,
     val_split: float = 0.2,
     seed: int = 42,
 ):
@@ -40,6 +40,7 @@ def chembl(
         human_df.select("activity_id").sample(fraction=val_split, seed=seed).distinct()
     )
     val_df = human_df.join(val_ids, on="activity_id", how="inner")
+    ## Multi organism training data
     train_df = df.join(val_ids, on="activity_id", how="left_anti")
     return train_df, val_df
 
@@ -50,6 +51,6 @@ if __name__ == "__main__":
         .remote("sc://localhost:15002")
         .getOrCreate()
     )
-    train, val = chembl(fingerprint=True)
+    train, val = chembl(spark=spark, val_split=0.2, seed=42)
     train.write.mode("overwrite").parquet("/data/chembl_36/fp_train")
     val.write.mode("overwrite").parquet("/data/chembl_36/fp_val")
