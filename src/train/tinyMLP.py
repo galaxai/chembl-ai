@@ -22,13 +22,16 @@ class TinyMLP:
         return x
 
 
-EPOCHS = 2
+EPOCHS = 5
 LR = 0.01
 BATCH_SIZE = 2028
 if __name__ == "__main__":
     model = TinyMLP()
     dataloader = ParquetDataLoader(
         dir="data/chembl_36/fp_train", X="morgan_fp", Y="pIC", batch_size=BATCH_SIZE
+    )
+    val_dataloader = ParquetDataLoader(
+        dir="data/chembl_36/fp_val", X="morgan_fp", Y="pIC", batch_size=BATCH_SIZE * 4
     )
     optimizer = optim.Muon(state.get_parameters(model), lr=LR)
 
@@ -40,6 +43,13 @@ if __name__ == "__main__":
         loss = (preds - y).square().mean()
         loss.backward()
         optimizer.step()
+        return loss.realize()
+
+    @TinyJit
+    @Tensor.train(False)
+    def eval_step(x: Tensor, y: Tensor) -> Tensor:
+        preds = model(x)
+        loss = (preds - y).square().mean()
         return loss.realize()
 
     print("Training started")
@@ -54,3 +64,14 @@ if __name__ == "__main__":
             if step % 10 == 9:
                 t.set_description(f"loss: {loss.item():6.2f}")
             t.update(1)
+
+        # Evaluate the model after each epoch
+        eval_loss = 0.0
+        val_iter = iter(val_dataloader)
+        for _ in range(len(val_dataloader)):
+            x, y = next(val_iter)
+            eval_loss += eval_step(x, y).item()
+
+        print(
+            f"Epoch {epoch + 1}: Validation loss: {eval_loss / len(val_dataloader):6.2f}"
+        )
