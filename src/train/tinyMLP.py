@@ -22,7 +22,7 @@ class TinyMLP:
         return x
 
 
-EPOCHS = 1
+EPOCHS = 2
 LR = 0.01
 BATCH_SIZE = 2028
 if __name__ == "__main__":
@@ -43,11 +43,14 @@ if __name__ == "__main__":
         return loss.realize()
 
     print("Training started")
+
+    total_steps = EPOCHS * len(dataloader)
+    t = trange(total_steps)
     for epoch in range(EPOCHS):
         loader_iter = iter(dataloader)
-        for step in (t := trange(len(dataloader))):
+        for step in range(len(dataloader)):
             x, y = next(loader_iter)
-            print(x.shape)
             loss = train_step(x, y)
             if step % 10 == 9:
                 t.set_description(f"loss: {loss.item():6.2f}")
+            t.update(1)
