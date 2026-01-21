@@ -71,30 +71,28 @@ def train_tinymlp(
 
     total_steps = epochs * len(dataloader)
     t = trange(total_steps)
+    vt = trange(epochs * len(val_dataloader))
 
     def log_metric(name: str, value: float, step: int) -> None:
         if logger:
             logger.log_metric(name, value, step)
 
     for _ in range(epochs):
-        train_losses = []
-        valid_losses = []
         loader_iter = iter(dataloader)
         for step in range(len(dataloader)):
             x, y = next(loader_iter)
             loss_value = train_step(x, y).item()
-            train_losses.append(loss_value)
             if step % 10 == 9:
                 t.set_description(f"loss: {loss_value:6.2f}")
             log_metric("train_loss", loss_value, t.i)
             t.update(1)
 
         val_iter = iter(val_dataloader)
-        for step in range(len(val_dataloader)):
+        for _ in range(len(val_dataloader)):
             x, y = next(val_iter)
             item_loss = valid_step(x, y).item()
-            valid_losses.append(item_loss)
-            log_metric("train_loss", item_loss, t.i)
+            log_metric("valid_loss", item_loss, vt.i)
+            vt.update(1)
 
 
 if __name__ == "__main__":
