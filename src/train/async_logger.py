@@ -35,4 +35,4 @@ class AsyncMetricLogger:
         if self._queue is None or self._thread is None:
             return
         self._queue.put(self._stop)
-        self._thread.join()
+        self._thread.join(timeout=5.0)
