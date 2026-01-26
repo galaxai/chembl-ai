@@ -69,7 +69,6 @@ SCHEMA = pa.schema(
         pa.field("edge_index", pa.list_(pa.list_(pa.int64()))),
     ]
 )
-print(SCHEMA.names)
 if __name__ == "__main__":
     from .helpers import export_sql_dataset
 
