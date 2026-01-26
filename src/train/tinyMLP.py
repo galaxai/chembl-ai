@@ -10,21 +10,24 @@ from src.train.load import ParquetDataLoader
 class TinyMLP:
     def __init__(self):
         self.l1 = nn.Linear(2048, 1024)
+        self.bn1 = nn.BatchNorm(1024)
         self.l2 = nn.Linear(1024, 512)
+        self.bn2 = nn.BatchNorm(512)
         self.l3 = nn.Linear(512, 256)
+        self.bn3 = nn.BatchNorm(256)
         self.l4 = nn.Linear(256, 1)
 
     def __call__(self, x):
-        x = self.l1(x).relu()
-        x = self.l2(x).relu()
-        x = self.l3(x).relu()
+        x = self.bn1(self.l1(x)).relu()
+        x = self.bn2(self.l2(x)).relu()
+        x = self.bn3(self.l3(x)).relu()
         x = self.l4(x)
         return x
 
 
 EPOCHS = 5
 LR = 0.01
-BATCH_SIZE = 2028
+BATCH_SIZE = 2028 * 4
 TRAIN_DIR = "data/chembl_36/fp_train"
 VAL_DIR = "data/chembl_36/fp_val"
 X_COL = "morgan_fp"
