@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
 
@@ -29,11 +31,13 @@ def _load_base_df(spark) -> DataFrame:
 def chembl(
     *,
     spark: SparkSession,
+    load_df: Callable[[SparkSession], DataFrame],
+    final_cols: list[str] | str,
     val_split: float = 0.2,
     seed: int = 42,
 ):
     """Return train/val splits of ChEMBL activity data."""
-    df = _load_base_df(spark)
+    df = load_df(spark)
     human = F.col("assay_organism") == "Homo sapiens"
     human_df = df.filter(human)
     val_ids = (
@@ -42,6 +46,8 @@ def chembl(
     val_df = human_df.join(val_ids, on="activity_id", how="inner")
     ## Multi organism training data
     train_df = df.join(val_ids, on="activity_id", how="left_anti")
+    train_df = train_df.select(final_cols)
+    val_df = val_df.select(final_cols)
     return train_df, val_df
 
 
@@ -51,6 +57,12 @@ if __name__ == "__main__":
         .remote("sc://localhost:15002")
         .getOrCreate()
     )
-    train, val = chembl(spark=spark, val_split=0.2, seed=42)
+    train, val = chembl(
+        spark=spark,
+        load_df=_load_base_df,
+        final_cols=["morgan_fp", "pIC"],
+        val_split=0.2,
+        seed=42,
+    )
     train.write.mode("overwrite").parquet("/data/chembl_36/fp_train")
     val.write.mode("overwrite").parquet("/data/chembl_36/fp_val")
