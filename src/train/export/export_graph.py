@@ -41,4 +41,4 @@ if __name__ == "__main__":
         seed=42,
     )
     train.write.mode("overwrite").parquet("/data/chembl_36/graph_train")
-    val.write.mode("overwrite").parquet("/data/chembl_36/graph_train")
+    val.write.mode("overwrite").parquet("/data/chembl_36/graph_valid")
