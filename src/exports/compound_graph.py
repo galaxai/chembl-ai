@@ -48,16 +48,9 @@ def rows_to_batch(rows: Sequence[tuple], names: Sequence[str]) -> pa.RecordBatch
         node_features_list.append(node_features)
         edge_index_list.append(edge_indices)
 
-    if not molregno_list:
-        arrays = [
-            pa.array([], type=pa.int64()),
-            pa.array([], type=pa.list_(pa.list_(pa.float64()))),
-            pa.array([], type=pa.list_(pa.list_(pa.int64()))),
-        ]
-        return pa.record_batch(arrays, schema=SCHEMA)
     arrays = [
         pa.array(molregno_list, type=pa.int64()),
-        pa.array(node_features_list, type=pa.list_(pa.list_(pa.float64()))),
+        pa.array(node_features_list, type=pa.list_(pa.list_(pa.float32()))),
         pa.array(edge_index_list, type=pa.list_(pa.list_(pa.int64()))),
     ]
     return pa.record_batch(arrays, schema=SCHEMA)
@@ -78,7 +71,7 @@ WHERE cs.canonical_smiles IS NOT NULL AND cs.canonical_smiles != ''
 SCHEMA = pa.schema(
     [
         pa.field("molregno", pa.int64()),
-        pa.field("node_features", pa.list_(pa.list_(pa.float64()))),
+        pa.field("node_features", pa.list_(pa.list_(pa.float32()))),
         pa.field("edge_index", pa.list_(pa.list_(pa.int64()))),
     ]
 )
