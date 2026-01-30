@@ -42,3 +42,4 @@ if __name__ == "__main__":
     )
     train.write.mode("overwrite").parquet("/data/chembl_36/graph_train")
     val.write.mode("overwrite").parquet("/data/chembl_36/graph_valid")
+    spark.stop()

@@ -35,7 +35,7 @@ def chembl(
     final_cols: list[str] | str,
     val_split: float = 0.2,
     seed: int = 42,
-):
+) -> tuple[DataFrame, DataFrame]:
     """Return train/val splits of ChEMBL activity data."""
     df = load_df(spark)
     human = F.col("assay_organism") == "Homo sapiens"

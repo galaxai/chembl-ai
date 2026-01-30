@@ -85,19 +85,20 @@ def valid_epoch(
     model.eval()
     total_loss = 0.0
     total_graphs = 0
-    for batch in loader:
-        batch = batch.to(device, non_blocking=True)
+    with torch.no_grad():
+        for batch in loader:
+            batch = batch.to(device, non_blocking=True)
 
-        with autocast(device.type, dtype=torch.bfloat16):
-            out = model(batch)
+            with autocast(device.type, dtype=torch.bfloat16):
+                out = model(batch)
 
-            target = batch.y.view(-1, 1)
-            loss = loss_fn(out, target)
+                target = batch.y.view(-1, 1)
+                loss = loss_fn(out, target)
 
-        total_loss += loss.item() * batch.num_graphs
-        total_graphs += batch.num_graphs
-        vt.set_description(f"Valid Loss: {total_loss / max(1, total_graphs):.4f}")
-        vt.update(1)
+            total_loss += loss.item() * batch.num_graphs
+            total_graphs += batch.num_graphs
+            vt.set_description(f"Valid Loss: {total_loss / max(1, total_graphs):.4f}")
+            vt.update(1)
 
     return total_loss / max(1, total_graphs)
 
