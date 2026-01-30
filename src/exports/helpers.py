@@ -7,8 +7,8 @@ import pyarrow.dataset as ds
 
 BatchTransform = Callable[[Sequence[tuple[Any, ...]], Sequence[str]], pa.RecordBatch]
 
-DB_PATH = "../data/chembl_36/chembl_36_sqlite/chembl_36.db"
-OUT_BASE = "../data/chembl_36/exports"
+DB_PATH = "data/chembl_36/chembl_36_sqlite/chembl_36.db"
+OUT_BASE = "data/chembl_36/exports"
 
 
 def rows_to_batch(
@@ -109,10 +109,5 @@ def export_sql_dataset(
 
     except Exception as e:
         print(f"Error occurred: {e}")
-        # TODO: remove it later, its good for iteration speed for now. Later it might remove user's data
-        if out_dir.exists():
-            import shutil
-
-            shutil.rmtree(out_dir)
 
         return None

@@ -7,10 +7,11 @@ from rdkit import Chem
 def _smiles_to_graph(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        return [], [[], []]
+        return None, None
+    if mol.GetNumAtoms() == 0:
+        return None, None
     node_features = []
-    num_atoms = mol.GetAtoms()
-    for atom in num_atoms:
+    for atom in mol.GetAtoms():
         features = [
             atom.GetAtomicNum(),  # Atomic number
             atom.GetDegree(),  # Number of bonds
@@ -38,13 +39,18 @@ def rows_to_batch(rows: Sequence[tuple], names: Sequence[str]) -> pa.RecordBatch
     smiles_idx = names_list.index("canonical_smiles")
     node_features_list = []
     edge_index_list = []
-    for smiles in cols[smiles_idx]:
+    molregno_list = []
+    for molregno, smiles in zip(cols[molregno_idx], cols[smiles_idx]):
         node_features, edge_indices = _smiles_to_graph(smiles)
+        if node_features is None or edge_indices is None:
+            continue
+        molregno_list.append(molregno)
         node_features_list.append(node_features)
         edge_index_list.append(edge_indices)
+
     arrays = [
-        pa.array(cols[molregno_idx], type=pa.int64()),
-        pa.array(node_features_list, type=pa.list_(pa.list_(pa.float64()))),
+        pa.array(molregno_list, type=pa.int64()),
+        pa.array(node_features_list, type=pa.list_(pa.list_(pa.float32()))),
         pa.array(edge_index_list, type=pa.list_(pa.list_(pa.int64()))),
     ]
     return pa.record_batch(arrays, schema=SCHEMA)
@@ -65,7 +71,7 @@ WHERE cs.canonical_smiles IS NOT NULL AND cs.canonical_smiles != ''
 SCHEMA = pa.schema(
     [
         pa.field("molregno", pa.int64()),
-        pa.field("node_features", pa.list_(pa.list_(pa.float64()))),
+        pa.field("node_features", pa.list_(pa.list_(pa.float32()))),
         pa.field("edge_index", pa.list_(pa.list_(pa.int64()))),
     ]
 )

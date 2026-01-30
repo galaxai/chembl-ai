@@ -7,3 +7,5 @@ For now only IC50
 
 
 # Check how Mass is distributed
+
+# Add scafold of molecules
