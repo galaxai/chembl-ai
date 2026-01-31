@@ -9,12 +9,19 @@ services:
 
     command: |
       bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+
         # Start the Spark Master daemon
         /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master &
 
         # Start Spark Connect server for remote client connections
         /opt/spark/sbin/start-connect-server.sh \
           --master spark://spark-master:7077 \
+          --conf spark.executor.memory=2g \
           --conf spark.connect.grpc.binding.address=0.0.0.0 \
           --conf spark.connect.grpc.binding.port=15002 &
 
@@ -80,11 +87,18 @@ services:
     image: apache/spark:4.1.0
     container_name: spark-worker-1
     environment:
-      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_MEMORY=2G
       - SPARK_WORKER_CORES=1
     depends_on:
       - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: spark-worker-1
     volumes:
       - ../data/chembl_36/:/data/chembl_36/
@@ -95,11 +109,18 @@ services:
     image: apache/spark:4.1.0
     container_name: spark-worker-2
     environment:
-      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_MEMORY=2G
       - SPARK_WORKER_CORES=1
     depends_on:
       - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: spark-worker-2
     volumes:
       - ../data/chembl_36/:/data/chembl_36/
@@ -110,11 +131,18 @@ services:
     image: apache/spark:4.1.0
     container_name: spark-worker-3
     environment:
-      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_MEMORY=2G
       - SPARK_WORKER_CORES=1
     depends_on:
       - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: spark-worker-3
     volumes:
       - ../data/chembl_36/:/data/chembl_36/
@@ -126,12 +154,108 @@ services:
     image: apache/spark:4.1.0
     container_name: spark-worker-4
     environment:
-      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_MEMORY=2G
       - SPARK_WORKER_CORES=1
     depends_on:
       - spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: spark-worker-4
+    volumes:
+      - ../data/chembl_36/:/data/chembl_36/
+    networks:
+      - spark-net
+
+
+  spark-worker-5:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-5
+    environment:
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+    hostname: spark-worker-5
+    volumes:
+      - ../data/chembl_36/:/data/chembl_36/
+    networks:
+      - spark-net
+
+  spark-worker-6:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-6
+    environment:
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+    hostname: spark-worker-6
+    volumes:
+      - ../data/chembl_36/:/data/chembl_36/
+    networks:
+      - spark-net
+
+  spark-worker-7:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-7
+    environment:
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+    hostname: spark-worker-7
+    volumes:
+      - ../data/chembl_36/:/data/chembl_36/
+    networks:
+      - spark-net
+
+  spark-worker-8:
+    image: apache/spark:4.1.0
+    container_name: spark-worker-8
+    environment:
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    command: |
+      bash -c '
+        set -e
+        export HOME=/tmp
+        export PYTHONUSERBASE=/tmp/.local
+        python3 -m ensurepip --upgrade || true
+        python3 -m pip install --user --no-cache-dir "rdkit>=2025.9.3" "numpy>=2.2.0" "pyarrow>=22.0.0"
+        /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+    hostname: spark-worker-8
     volumes:
       - ../data/chembl_36/:/data/chembl_36/
     networks:

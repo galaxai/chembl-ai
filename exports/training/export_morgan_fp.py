@@ -1,3 +1,4 @@
+import os
 from typing import Callable
 
 import pyspark.sql.functions as F
@@ -52,10 +53,9 @@ def chembl(
 
 
 if __name__ == "__main__":
+    connect_url = os.environ.get("SPARK_CONNECT_URL", "sc://localhost:15002")
     spark = (
-        SparkSession.builder.appName("chembl-parquet")
-        .remote("sc://localhost:15002")
-        .getOrCreate()
+        SparkSession.builder.appName("chembl-parquet").remote(connect_url).getOrCreate()
     )
     train, val = chembl(
         spark=spark,

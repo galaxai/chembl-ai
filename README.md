@@ -43,29 +43,31 @@ The full ChEMBL schema reference is in `schema_documentation.txt`.
 These scripts query the SQLite DB and write Parquet under `data/chembl_36/exports`:
 
 ```bash
-uv run python -m src.exports.assay
-uv run python -m src.exports.activity
-uv run python -m src.exports.compound_struct
-uv run python -m src.exports.compound_graph
+uv run python -m exports.assay
+uv run python -m exports.activity
+uv run python -m exports.compound_struct
+uv run python -m exports.compound_graph
 ```
 
 Notes:
 - `compound_struct` adds Morgan fingerprints (radius=2, 2048 bits).
-- `compound_graph` builds node features and edge indices for GNNs.
+- `compound_graph` exports `molregno` + `canonical_smiles` for Spark graph generation.
 - `transforms.preprocess_activity` filters to nM values and computes pIC.
 
 ## Build train/val splits (Spark)
 Spark jobs that join activity/assay/structure exports and write split datasets:
 
 ```bash
-uv run python -m src.train.export.export_morgan_fp
-uv run python -m src.train.export.export_graph
+uv run python -m exports.training.export_morgan_fp
+./exports/export_graph.sh
 ```
+
+`export_graph.sh` runs Spark Connect via `uv run --no-project` with Python 3.10 and explicit deps. Set `PYTHON_VERSION` to override 3.10 and `SPARK_CONNECT_URL` to override `sc://localhost:15002`.
 
 These scripts use `/data/chembl_36/exports` and write to `/data/chembl_36/...` by default. If you are running locally without a `/data` mount, either:
 
 - Create a symlink: `ln -s "$(pwd)/data/chembl_36" /data/chembl_36`
-- Or edit the paths in `src/train/export/export_morgan_fp.py` and `src/train/export/export_graph.py`.
+- Or edit the paths in `exports/training/export_morgan_fp.py` and `exports/training/export_graph.py`.
 
 ## Train baselines
 Tinygrad MLP on Morgan fingerprints:
@@ -84,9 +86,9 @@ uv run python -m src.train.GCN
 See `spark_airflow/README.md` for the Docker Compose stack and UI endpoints.
 
 ## Project layout
-- `src/exports/` — SQL export definitions and dataset writers
+- `exports/` — SQL export definitions and dataset writers
 - `src/transforms/` — cleaning and pIC computation
-- `src/train/export/` — Spark join + train/val split jobs
+- `exports/training/` — Spark join + train/val split jobs
 - `src/train/` — training scripts (tinygrad MLP, torch GCN)
 - `notebooks/` — Jupyter notebooks (see `notebooks/README.md`)
 - `data/` — local datasets and exports
