@@ -102,3 +102,4 @@ if __name__ == "__main__":
     )
     train.write.mode("overwrite").parquet("/data/chembl_36/fp_train")
     val.write.mode("overwrite").parquet("/data/chembl_36/fp_val")
+    spark.stop()
