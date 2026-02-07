@@ -15,10 +15,6 @@ SCHEMA = pa.schema(
         ("chembl_id", pa.string()),
     ]
 )
-## FILTERS ##
-organism = ("Homo sapiens", "Mus musculus", "Rattus norvegicus")
-assay_tax_id = (9606, 10090, 10116)
-
 ## COLUMNS
 columns = [
     "ass.assay_id",
@@ -35,9 +31,6 @@ SQL = f"""
 SELECT
     {", ".join(columns)}
 FROM assays ass
-WHERE
-ass.assay_organism IN {organism} AND
-ass.assay_tax_id IN {assay_tax_id}
 """
 
 
