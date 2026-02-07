@@ -108,7 +108,7 @@ BS_SIZE = 256
 LR = 2e-4
 OPTIM = torch.optim.AdamW
 LOSS = torch.nn.MSELoss()
-EPOCHS = 10
+EPOCHS = 20
 HIDDEN_CHANNELS = 512
 NUM_WORKERS = min(12, cpu_count() or 1)
 
@@ -120,12 +120,9 @@ if __name__ == "__main__":
         "shuffle": False,
         "num_workers": NUM_WORKERS,
         "pin_memory": device.type == "cuda",
+        "persistent_workers": True,
+        "prefetch_factor": 4,
     }
-    if NUM_WORKERS > 0:
-        loader_kwargs.update(
-            persistent_workers=True,
-            prefetch_factor=4,
-        )
     train_loader = DataLoader(train_ds, **loader_kwargs)
     valid_loader = DataLoader(valid_ds, **loader_kwargs)
     first_batch = next(iter(train_loader))

@@ -22,12 +22,6 @@ SCHEMA = pa.schema(
     ]
 )
 
-## FILTERS ##
-STD_TYPES = ("IC50", "GI50", "Ki", "EC50")
-potential_duplicate = 0
-organism = ("Homo sapiens", "Mus musculus", "Rattus norvegicus")
-assay_tax_id = (9606, 10090, 10116)
-
 ## COLUMNS ##
 columns = [
     "act.activity_id",
@@ -48,13 +42,6 @@ columns = [
 SQL = f"""
 SELECT {", ".join(columns)}
 FROM activities act
-
-JOIN assays ass ON ass.assay_id = act.assay_id
-WHERE act.standard_type IN {STD_TYPES}
-  AND act.potential_duplicate = {potential_duplicate}
-  AND (
-    ass.assay_organism IN {organism} OR
-    ass.assay_tax_id IN {assay_tax_id})
 """
 
 if __name__ == "__main__":

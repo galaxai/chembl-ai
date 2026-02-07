@@ -46,23 +46,24 @@ These scripts query the SQLite DB and write Parquet under `data/chembl_36/export
 uv run python -m exports.assay
 uv run python -m exports.activity
 uv run python -m exports.compound_struct
-uv run python -m exports.compound_graph
 ```
 
 Notes:
-- `compound_struct` adds Morgan fingerprints (radius=2, 2048 bits).
-- `compound_graph` exports `molregno` + `canonical_smiles` for Spark graph generation.
+- Base exports are raw tables (no joins or filters).
+- `compound_struct` exports `molregno` + `canonical_smiles` for Spark fingerprint and graph generation.
+- `exports/training/export_morgan_fp.py` generates Morgan fingerprints (radius=2, 2048 bits).
+- `exports/training/export_graph.py` builds molecular graphs.
 - `transforms.preprocess_activity` filters to nM values and computes pIC.
 
 ## Build train/val splits (Spark)
 Spark jobs that join activity/assay/structure exports and write split datasets:
 
 ```bash
-uv run python -m exports.training.export_morgan_fp
-./exports/export_graph.sh
+./exports/create_training_sets.sh export_morgan_fp.py
+./exports/create_training_sets.sh export_graph.py
 ```
 
-`export_graph.sh` runs Spark Connect via `uv run --no-project` with Python 3.10 and explicit deps. Set `PYTHON_VERSION` to override 3.10 and `SPARK_CONNECT_URL` to override `sc://localhost:15002`.
+`create_training_sets.sh` runs Spark Connect via `uv run --no-project` with Python 3.10 and explicit deps. Pass the training export filename. Set `SPARK_CONNECT_URL` to override `sc://localhost:15002`.
 
 These scripts use `/data/chembl_36/exports` and write to `/data/chembl_36/...` by default. If you are running locally without a `/data` mount, either:
 

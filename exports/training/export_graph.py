@@ -4,9 +4,7 @@ import pyarrow as pa
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import ArrayType, FloatType, LongType, StructField, StructType
 
-from src.transforms import preprocess_activity
-
-from .export_morgan_fp import chembl
+from .common import chembl, load_activity_features_df
 
 _GRAPH_SCHEMA = StructType(
     [
@@ -98,26 +96,12 @@ def _graph_df_from_smiles(struct: DataFrame) -> DataFrame:
 
 def _load_base_df(spark) -> DataFrame:
     """Load and join activity, assay, and structure parquet sources."""
-    base = "/data/chembl_36/exports"
-    activity = spark.read.parquet(f"{base}/activity")
-    assay = spark.read.parquet(f"{base}/assay")
-    struct = spark.read.parquet(f"{base}/compound_graph")
-    graph_df = _graph_df_from_smiles(struct)
-    activity = preprocess_activity(activity)
-
-    df = (
-        activity.join(assay, "assay_id", "inner")
-        .join(graph_df, "molregno", "inner")
-        .select(
-            "activity_id",
-            "node_features",
-            "edge_index",
-            "pIC",
-            "assay_organism",
-        )
+    return load_activity_features_df(
+        spark=spark,
+        struct_name="compound_struct",
+        struct_to_features=_graph_df_from_smiles,
+        feature_cols=["node_features", "edge_index"],
     )
-    df = df.na.drop()
-    return df
 
 
 if __name__ == "__main__":
