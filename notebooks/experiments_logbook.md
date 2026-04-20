@@ -13,3 +13,4 @@
 - Add epoch `MAE` and `RMSE` in `src/train/GCN.py` for both train and validation regression quality.
 - Restrict `exports/training/export_graph.py` to exact `standard_relation='='` labels and `standard_type='IC50'` only.
 - Drop `pIC` outliers in `exports/training/export_graph.py` with an IQR filter after computing `pIC`.
+- Aggregate graph labels by `molregno` in `exports/training/export_graph.py` using median `pIC` before the train/valid split.

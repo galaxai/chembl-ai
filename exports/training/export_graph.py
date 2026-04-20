@@ -11,6 +11,7 @@ STANDARD_TYPE = "IC50"
 STANDARD_RELATION = "="
 IQR_MULTIPLIER = 1.5
 QUANTILE_RELATIVE_ERROR = 0.001
+MEDIAN_ACCURACY = 10_000
 
 _GRAPH_SCHEMA = StructType(
     [
@@ -116,9 +117,19 @@ def _filter_pIC_outliers_iqr(activity: DataFrame) -> DataFrame:
     return activity.filter((F.col("pIC") >= lower) & (F.col("pIC") <= upper))
 
 
+def _aggregate_labels_by_molregno(df: DataFrame) -> DataFrame:
+    return df.groupBy("molregno").agg(
+        F.min("activity_id").alias("activity_id"),
+        F.first("node_features").alias("node_features"),
+        F.first("edge_index").alias("edge_index"),
+        F.expr(f"percentile_approx(pIC, 0.5, {MEDIAN_ACCURACY})").alias("pIC"),
+        F.first("assay_organism").alias("assay_organism"),
+    )
+
+
 def _load_base_df(spark) -> DataFrame:
     """Load and join activity, assay, and structure parquet sources."""
-    return load_activity_features_df(
+    df = load_activity_features_df(
         spark=spark,
         struct_name="compound_struct",
         struct_to_features=_graph_df_from_smiles,
@@ -129,6 +140,7 @@ def _load_base_df(spark) -> DataFrame:
         ),
         activity_postprocess=_filter_pIC_outliers_iqr,
     )
+    return _aggregate_labels_by_molregno(df)
 
 
 if __name__ == "__main__":

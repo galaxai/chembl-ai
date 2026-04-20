@@ -48,7 +48,7 @@ def load_activity_features_df(
     df = (
         activity.join(assay, "assay_id", "inner")
         .join(features, "molregno", "inner")
-        .select("activity_id", *feature_cols, "pIC", "assay_organism")
+        .select("activity_id", "molregno", *feature_cols, "pIC", "assay_organism")
     )
     return df.na.drop()
 
