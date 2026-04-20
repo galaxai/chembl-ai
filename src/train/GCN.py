@@ -85,6 +85,19 @@ def log_gradient_stats(model: torch.nn.Module, logger, step: int) -> None:
         )
 
 
+def log_parameter_stats(model: torch.nn.Module, logger, step: int) -> None:
+    for name, param in model.named_parameters():
+        value = param.detach().float()
+        log_metric(logger, f"param_std/{name}", value.std(unbiased=False).item(), step)
+        log_metric(logger, f"param_var/{name}", value.var(unbiased=False).item(), step)
+        log_metric(
+            logger,
+            f"param_zero_fraction/{name}",
+            (value == 0).float().mean().item(),
+            step,
+        )
+
+
 def batch_error_sums(out: torch.Tensor, target: torch.Tensor) -> tuple[float, float]:
     error = out.detach().float() - target.detach().float()
     return error.abs().sum().item(), error.square().sum().item()
@@ -127,6 +140,7 @@ def train_epoch(
             scaler.unscale_(optimizer)
 
         if should_log_grads:
+            log_parameter_stats(model, logger, global_step)
             log_gradient_stats(model, logger, global_step)
 
         if should_clip_grads:
@@ -137,11 +151,15 @@ def train_epoch(
 
         loss_value = loss.item()
         batch_abs_error, batch_squared_error = batch_error_sums(out, target)
+        batch_mae = batch_abs_error / max(1, batch.num_graphs)
+        batch_rmse = (batch_squared_error / max(1, batch.num_graphs)) ** 0.5
         total_loss += loss_value * batch.num_graphs
         total_graphs += batch.num_graphs
         total_abs_error += batch_abs_error
         total_squared_error += batch_squared_error
         log_metric(logger, "train_loss", loss_value, global_step)
+        log_metric(logger, "train_mae", batch_mae, global_step)
+        log_metric(logger, "train_rmse", batch_rmse, global_step)
         t.set_description(f"Train Loss: {total_loss / max(1, total_graphs):.4f}")
         t.update(1)
         global_step += 1
@@ -178,11 +196,15 @@ def valid_epoch(
 
             loss_value = loss.item()
             batch_abs_error, batch_squared_error = batch_error_sums(out, target)
+            batch_mae = batch_abs_error / max(1, batch.num_graphs)
+            batch_rmse = (batch_squared_error / max(1, batch.num_graphs)) ** 0.5
             total_loss += loss_value * batch.num_graphs
             total_graphs += batch.num_graphs
             total_abs_error += batch_abs_error
             total_squared_error += batch_squared_error
             log_metric(logger, "valid_loss", loss_value, global_step)
+            log_metric(logger, "valid_mae", batch_mae, global_step)
+            log_metric(logger, "valid_rmse", batch_rmse, global_step)
             vt.set_description(f"Valid Loss: {total_loss / max(1, total_graphs):.4f}")
             vt.update(1)
             global_step += 1

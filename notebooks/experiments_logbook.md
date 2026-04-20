@@ -14,3 +14,6 @@
 - Restrict `exports/training/export_graph.py` to exact `standard_relation='='` labels and `standard_type='IC50'` only.
 - Drop `pIC` outliers in `exports/training/export_graph.py` with an IQR filter after computing `pIC`.
 - Aggregate graph labels by `molregno` in `exports/training/export_graph.py` using median `pIC` before the train/valid split.
+- Add parameter distribution metrics in `src/train/GCN.py` with `param_std`, `param_var`, and `param_zero_fraction`.
+- Add batch-level `train_mae`, `train_rmse`, `valid_mae`, and `valid_rmse` logging in `src/train/GCN.py`.
+- Batch async MLflow metric writes and drain the metric queue safely in `src/train/async_logger.py`.
