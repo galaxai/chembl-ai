@@ -7,8 +7,9 @@ import torch.nn.functional as F
 from tinygrad.helpers import trange
 from torch.amp.autocast_mode import autocast
 from torch.amp.grad_scaler import GradScaler
+from torch.utils.data import IterableDataset
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn import GCNConv, global_max_pool
+from torch_geometric.nn import GCNConv, global_mean_pool
 
 from src.train.load.troch_iter_loader import SMILESDataset
 
@@ -30,18 +31,14 @@ class GCNModel(torch.nn.Module):
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        x = self.conv3(x, edge_index)
-        x = F.relu(x)
-        x = self.conv4(x, edge_index)
-        x = F.relu(x)
-        x = global_max_pool(x, batch)
+        x = F.silu(self.conv1(x, edge_index))
+        x = x + F.silu(self.conv2(x, edge_index))
+        x = x + F.silu(self.conv3(x, edge_index))
+        x = x + F.silu(self.conv4(x, edge_index))
+        x = global_mean_pool(x, batch)
 
         x = self.lin1(x)
-        x = F.relu(x)
+        x = F.silu(x)
         x = self.lin2(x)
 
         return x
@@ -49,15 +46,18 @@ class GCNModel(torch.nn.Module):
 
 ## ARGS
 BS_SIZE = 256
-LR = 2e-3
+LR = 2e-4
 OPTIM = torch.optim.AdamW
 LOSS = torch.nn.MSELoss()
-EPOCHS = 10
+EPOCHS = 5
 HIDDEN_CHANNELS = 512
 NUM_WORKERS = min(12, cpu_count() or 1)
 TRAIN_DIR = "data/chembl_36/graph_train"
 VALID_DIR = "data/chembl_36/graph_valid"
 GRAD_LOG_EPOCHS = 2
+ACTIVATION = "silu"
+POOLING = "global_mean_pool"
+RESIDUAL_CONNECTIONS = True
 
 
 def log_metric(logger, name: str, value: float, step: int) -> None:
@@ -175,14 +175,20 @@ def train_gcn(
     valid_ds = SMILESDataset(valid_dir)
     loader_kwargs = {
         "batch_size": batch_size,
-        "shuffle": False,
         "num_workers": NUM_WORKERS,
         "pin_memory": device.type == "cuda",
         "persistent_workers": True,
         "prefetch_factor": 4,
     }
-    train_loader = DataLoader(train_ds, **loader_kwargs)
-    valid_loader = DataLoader(valid_ds, **loader_kwargs)
+    train_loader_kwargs = dict(loader_kwargs)
+    valid_loader_kwargs = dict(loader_kwargs)
+    if not isinstance(train_ds, IterableDataset):
+        train_loader_kwargs["shuffle"] = True
+    if not isinstance(valid_ds, IterableDataset):
+        valid_loader_kwargs["shuffle"] = False
+
+    train_loader = DataLoader(train_ds, **train_loader_kwargs)
+    valid_loader = DataLoader(valid_ds, **valid_loader_kwargs)
     first_batch = next(iter(train_loader))
     num_node_features = first_batch.x.shape[1]
     model = GCNModel(

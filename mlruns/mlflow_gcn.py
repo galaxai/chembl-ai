@@ -9,6 +9,7 @@ def log_mlflow_run() -> None:
 
     from src.train.async_logger import AsyncMetricLogger
     from src.train.GCN import (
+        ACTIVATION,
         BS_SIZE,
         EPOCHS,
         GRAD_LOG_EPOCHS,
@@ -16,6 +17,8 @@ def log_mlflow_run() -> None:
         LR,
         NUM_WORKERS,
         OPTIM,
+        POOLING,
+        RESIDUAL_CONNECTIONS,
         TRAIN_DIR,
         VALID_DIR,
         train_gcn,
@@ -35,6 +38,9 @@ def log_mlflow_run() -> None:
         mlflow.log_param("train_dir", TRAIN_DIR)
         mlflow.log_param("valid_dir", VALID_DIR)
         mlflow.log_param("grad_log_epochs", GRAD_LOG_EPOCHS)
+        mlflow.log_param("activation", ACTIVATION)
+        mlflow.log_param("pooling", POOLING)
+        mlflow.log_param("residual_connections", str(RESIDUAL_CONNECTIONS).lower())
 
         active_run = mlflow.active_run()
         if active_run is None:
