@@ -12,9 +12,12 @@ def log_mlflow_run() -> None:
         ACTIVATION,
         BS_SIZE,
         EPOCHS,
+        GRAD_CLIP_NORM,
         GRAD_LOG_EPOCHS,
         HIDDEN_CHANNELS,
+        HUBER_DELTA,
         LR,
+        LOSS_NAME,
         NUM_WORKERS,
         OPTIM,
         POOLING,
@@ -38,6 +41,9 @@ def log_mlflow_run() -> None:
         mlflow.log_param("train_dir", TRAIN_DIR)
         mlflow.log_param("valid_dir", VALID_DIR)
         mlflow.log_param("grad_log_epochs", GRAD_LOG_EPOCHS)
+        mlflow.log_param("loss", LOSS_NAME)
+        mlflow.log_param("huber_delta", HUBER_DELTA)
+        mlflow.log_param("grad_clip_norm", GRAD_CLIP_NORM)
         mlflow.log_param("activation", ACTIVATION)
         mlflow.log_param("pooling", POOLING)
         mlflow.log_param("residual_connections", str(RESIDUAL_CONNECTIONS).lower())
@@ -64,6 +70,7 @@ def log_mlflow_run() -> None:
                 valid_dir=VALID_DIR,
                 logger=async_logger,
                 grad_log_epochs=GRAD_LOG_EPOCHS,
+                grad_clip_norm=GRAD_CLIP_NORM,
             )
         finally:
             async_logger.close()

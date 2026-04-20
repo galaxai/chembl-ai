@@ -48,13 +48,16 @@ class GCNModel(torch.nn.Module):
 BS_SIZE = 256
 LR = 2e-4
 OPTIM = torch.optim.AdamW
-LOSS = torch.nn.MSELoss()
+LOSS_NAME = "huber"
+HUBER_DELTA = 0.5
+LOSS = torch.nn.HuberLoss(delta=HUBER_DELTA)
 EPOCHS = 5
 HIDDEN_CHANNELS = 512
 NUM_WORKERS = min(12, cpu_count() or 1)
 TRAIN_DIR = "data/chembl_36/graph_train"
 VALID_DIR = "data/chembl_36/graph_valid"
 GRAD_LOG_EPOCHS = 2
+GRAD_CLIP_NORM = 1.0
 ACTIVATION = "silu"
 POOLING = "global_mean_pool"
 RESIDUAL_CONNECTIONS = True
@@ -93,6 +96,7 @@ def train_epoch(
     step_offset: int,
     logger=None,
     grad_log_epochs: int = 0,
+    grad_clip_norm: float | None = None,
 ):
     """Train for one epoch"""
     model.train()
@@ -110,9 +114,16 @@ def train_epoch(
             loss = loss_fn(out, target)
 
         scaler.scale(loss).backward()
-        if logger and epoch < grad_log_epochs:
+        should_log_grads = logger and epoch < grad_log_epochs
+        should_clip_grads = grad_clip_norm is not None and grad_clip_norm > 0
+        if should_log_grads or should_clip_grads:
             scaler.unscale_(optimizer)
+
+        if should_log_grads:
             log_gradient_stats(model, logger, global_step)
+
+        if should_clip_grads:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_norm)
 
         scaler.step(optimizer)
         scaler.update()
@@ -170,6 +181,7 @@ def train_gcn(
     valid_dir: str = VALID_DIR,
     logger=None,
     grad_log_epochs: int = GRAD_LOG_EPOCHS,
+    grad_clip_norm: float | None = GRAD_CLIP_NORM,
 ):
     train_ds = SMILESDataset(train_dir)
     valid_ds = SMILESDataset(valid_dir)
@@ -221,6 +233,7 @@ def train_gcn(
             step_offset=train_step,
             logger=logger,
             grad_log_epochs=grad_log_epochs,
+            grad_clip_norm=grad_clip_norm,
         )
         valid_loss, valid_step = valid_epoch(
             model,
