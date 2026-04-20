@@ -19,6 +19,8 @@ def load_activity_features_df(
     struct_to_features: Callable[[DataFrame], DataFrame],
     feature_cols: list[str],
     base: str = EXPORT_BASE,
+    activity_filter: Callable[[DataFrame], DataFrame] | None = None,
+    activity_postprocess: Callable[[DataFrame], DataFrame] | None = None,
 ) -> DataFrame:
     """Load activity/assay data and join with structure-derived features."""
     activity = spark.read.parquet(f"{base}/activity")
@@ -28,6 +30,8 @@ def load_activity_features_df(
         (F.col("standard_type").isin(*STD_TYPES))
         & (F.col("potential_duplicate") == POTENTIAL_DUPLICATE)
     )
+    if activity_filter is not None:
+        activity = activity_filter(activity)
     assay = assay.filter(
         (F.col("assay_organism").isin(*ORGANISM))
         & (F.col("assay_tax_id").isin(*ASSAY_TAX_ID))
@@ -38,6 +42,8 @@ def load_activity_features_df(
         )
     features = struct_to_features(struct)
     activity = preprocess_activity(activity)
+    if activity_postprocess is not None:
+        activity = activity_postprocess(activity)
 
     df = (
         activity.join(assay, "assay_id", "inner")

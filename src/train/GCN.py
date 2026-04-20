@@ -85,6 +85,11 @@ def log_gradient_stats(model: torch.nn.Module, logger, step: int) -> None:
         )
 
 
+def batch_error_sums(out: torch.Tensor, target: torch.Tensor) -> tuple[float, float]:
+    error = out.detach().float() - target.detach().float()
+    return error.abs().sum().item(), error.square().sum().item()
+
+
 def train_epoch(
     model: torch.nn.Module,
     loader: DataLoader,
@@ -102,6 +107,8 @@ def train_epoch(
     model.train()
     total_loss = 0.0
     total_graphs = 0
+    total_abs_error = 0.0
+    total_squared_error = 0.0
     global_step = step_offset
     for batch in loader:
         batch = batch.to(device, non_blocking=True)
@@ -129,14 +136,20 @@ def train_epoch(
         scaler.update()
 
         loss_value = loss.item()
+        batch_abs_error, batch_squared_error = batch_error_sums(out, target)
         total_loss += loss_value * batch.num_graphs
         total_graphs += batch.num_graphs
+        total_abs_error += batch_abs_error
+        total_squared_error += batch_squared_error
         log_metric(logger, "train_loss", loss_value, global_step)
         t.set_description(f"Train Loss: {total_loss / max(1, total_graphs):.4f}")
         t.update(1)
         global_step += 1
 
-    return total_loss / max(1, total_graphs), global_step
+    mean_loss = total_loss / max(1, total_graphs)
+    mae = total_abs_error / max(1, total_graphs)
+    rmse = (total_squared_error / max(1, total_graphs)) ** 0.5
+    return mean_loss, mae, rmse, global_step
 
 
 def valid_epoch(
@@ -150,6 +163,8 @@ def valid_epoch(
     model.eval()
     total_loss = 0.0
     total_graphs = 0
+    total_abs_error = 0.0
+    total_squared_error = 0.0
     global_step = step_offset
     with torch.no_grad():
         for batch in loader:
@@ -162,14 +177,20 @@ def valid_epoch(
                 loss = loss_fn(out, target)
 
             loss_value = loss.item()
+            batch_abs_error, batch_squared_error = batch_error_sums(out, target)
             total_loss += loss_value * batch.num_graphs
             total_graphs += batch.num_graphs
+            total_abs_error += batch_abs_error
+            total_squared_error += batch_squared_error
             log_metric(logger, "valid_loss", loss_value, global_step)
             vt.set_description(f"Valid Loss: {total_loss / max(1, total_graphs):.4f}")
             vt.update(1)
             global_step += 1
 
-    return total_loss / max(1, total_graphs), global_step
+    mean_loss = total_loss / max(1, total_graphs)
+    mae = total_abs_error / max(1, total_graphs)
+    rmse = (total_squared_error / max(1, total_graphs)) ** 0.5
+    return mean_loss, mae, rmse, global_step
 
 
 def train_gcn(
@@ -222,7 +243,7 @@ def train_gcn(
     train_step = 0
     valid_step = 0
     for epoch in range(epochs):
-        train_loss, train_step = train_epoch(
+        train_loss, train_mae, train_rmse, train_step = train_epoch(
             model,
             train_loader,
             optimizer,
@@ -235,7 +256,7 @@ def train_gcn(
             grad_log_epochs=grad_log_epochs,
             grad_clip_norm=grad_clip_norm,
         )
-        valid_loss, valid_step = valid_epoch(
+        valid_loss, valid_mae, valid_rmse, valid_step = valid_epoch(
             model,
             valid_loader,
             LOSS,
@@ -244,9 +265,15 @@ def train_gcn(
             logger=logger,
         )
         log_metric(logger, "epoch_train_loss", train_loss, epoch)
+        log_metric(logger, "epoch_train_mae", train_mae, epoch)
+        log_metric(logger, "epoch_train_rmse", train_rmse, epoch)
         log_metric(logger, "epoch_valid_loss", valid_loss, epoch)
+        log_metric(logger, "epoch_valid_mae", valid_mae, epoch)
+        log_metric(logger, "epoch_valid_rmse", valid_rmse, epoch)
         print(
-            f"\nEpoch {epoch + 1}: Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}"
+            f"\nEpoch {epoch + 1}: "
+            f"Train Loss: {train_loss:.4f}, Train MAE: {train_mae:.4f}, Train RMSE: {train_rmse:.4f}, "
+            f"Valid Loss: {valid_loss:.4f}, Valid MAE: {valid_mae:.4f}, Valid RMSE: {valid_rmse:.4f}"
         )
 
     return model

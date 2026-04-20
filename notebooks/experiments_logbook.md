@@ -10,3 +10,6 @@
 - Switch `src/train/GCN.py` from `MSELoss` to `HuberLoss(delta=0.5)` for noisier assay regression targets.
 - Add gradient clipping with `clip_grad_norm_=1.0` in `src/train/GCN.py` to cap rare large updates.
 - Log `loss`, `huber_delta`, and `grad_clip_norm` in `mlruns/mlflow_gcn.py`.
+- Add epoch `MAE` and `RMSE` in `src/train/GCN.py` for both train and validation regression quality.
+- Restrict `exports/training/export_graph.py` to exact `standard_relation='='` labels and `standard_type='IC50'` only.
+- Drop `pIC` outliers in `exports/training/export_graph.py` with an IQR filter after computing `pIC`.
