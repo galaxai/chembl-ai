@@ -8,8 +8,8 @@ from src.transforms import preprocess_activity
 EXPORT_BASE = "/data/chembl_36/exports"
 STD_TYPES = ("IC50", "GI50", "Ki", "EC50")
 POTENTIAL_DUPLICATE = 0
-ORGANISM = ("Homo sapiens", "Mus musculus", "Rattus norvegicus")
-ASSAY_TAX_ID = (9606, 10090, 10116)
+ORGANISM = ("Homo sapiens",)
+ASSAY_TAX_ID = (9606,)
 
 
 def load_activity_features_df(
@@ -57,13 +57,8 @@ def chembl(
 ) -> tuple[DataFrame, DataFrame]:
     """Return train/val splits of ChEMBL activity data."""
     df = load_df(spark)
-    human = F.col("assay_organism") == "Homo sapiens"
-    human_df = df.filter(human)
-    val_ids = (
-        human_df.select("activity_id").sample(fraction=val_split, seed=seed).distinct()
-    )
-    val_df = human_df.join(val_ids, on="activity_id", how="inner")
-    ## Multi organism training data
+    val_ids = df.select("activity_id").sample(fraction=val_split, seed=seed).distinct()
+    val_df = df.join(val_ids, on="activity_id", how="inner")
     train_df = df.join(val_ids, on="activity_id", how="left_anti")
     train_df = train_df.select(final_cols)
     val_df = val_df.select(final_cols)

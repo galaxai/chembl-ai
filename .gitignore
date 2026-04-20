@@ -3,6 +3,7 @@
 *.tar.gz
 *.gz
 *.db
+*egg-info
 .env
 spark_airflow/mlruns/
 
