@@ -5,17 +5,25 @@ import os
 
 def log_mlflow_run() -> None:
     import mlflow
+    import time
+    from mlflow.entities import Metric
     from mlflow.tracking import MlflowClient
 
     from src.train.async_logger import AsyncMetricLogger
     from src.train.GCN import (
+        ACTIVATION,
         BS_SIZE,
         EPOCHS,
+        GRAD_CLIP_NORM,
         GRAD_LOG_EPOCHS,
         HIDDEN_CHANNELS,
+        HUBER_DELTA,
         LR,
+        LOSS_NAME,
         NUM_WORKERS,
         OPTIM,
+        POOLING,
+        RESIDUAL_CONNECTIONS,
         TRAIN_DIR,
         VALID_DIR,
         train_gcn,
@@ -35,6 +43,12 @@ def log_mlflow_run() -> None:
         mlflow.log_param("train_dir", TRAIN_DIR)
         mlflow.log_param("valid_dir", VALID_DIR)
         mlflow.log_param("grad_log_epochs", GRAD_LOG_EPOCHS)
+        mlflow.log_param("loss", LOSS_NAME)
+        mlflow.log_param("huber_delta", HUBER_DELTA)
+        mlflow.log_param("grad_clip_norm", GRAD_CLIP_NORM)
+        mlflow.log_param("activation", ACTIVATION)
+        mlflow.log_param("pooling", POOLING)
+        mlflow.log_param("residual_connections", str(RESIDUAL_CONNECTIONS).lower())
 
         active_run = mlflow.active_run()
         if active_run is None:
@@ -47,7 +61,22 @@ def log_mlflow_run() -> None:
             def log_metric(self, name: str, value: float, step: int) -> None:
                 client.log_metric(run_id, name, value, step=step)
 
-        async_logger = AsyncMetricLogger(_ClientLogger())
+            def log_metrics(self, metrics) -> None:
+                timestamp = int(time.time() * 1000)
+                client.log_batch(
+                    run_id,
+                    metrics=[
+                        Metric(
+                            key=name,
+                            value=float(value),
+                            timestamp=timestamp,
+                            step=step,
+                        )
+                        for name, value, step in metrics
+                    ],
+                )
+
+        async_logger = AsyncMetricLogger(_ClientLogger(), max_batch_size=256)
         try:
             train_gcn(
                 epochs=EPOCHS,
@@ -58,6 +87,7 @@ def log_mlflow_run() -> None:
                 valid_dir=VALID_DIR,
                 logger=async_logger,
                 grad_log_epochs=GRAD_LOG_EPOCHS,
+                grad_clip_norm=GRAD_CLIP_NORM,
             )
         finally:
             async_logger.close()

@@ -5,6 +5,8 @@ import os
 
 def log_mlflow_run() -> None:
     import mlflow
+    import time
+    from mlflow.entities import Metric
     from mlflow.tracking import MlflowClient
 
     from src.train.async_logger import AsyncMetricLogger
@@ -41,7 +43,22 @@ def log_mlflow_run() -> None:
             def log_metric(self, name: str, value: float, step: int) -> None:
                 client.log_metric(run_id, name, value, step=step)
 
-        async_logger = AsyncMetricLogger(_ClientLogger())
+            def log_metrics(self, metrics) -> None:
+                timestamp = int(time.time() * 1000)
+                client.log_batch(
+                    run_id,
+                    metrics=[
+                        Metric(
+                            key=name,
+                            value=float(value),
+                            timestamp=timestamp,
+                            step=step,
+                        )
+                        for name, value, step in metrics
+                    ],
+                )
+
+        async_logger = AsyncMetricLogger(_ClientLogger(), max_batch_size=256)
         try:
             train_tinymlp(
                 epochs=EPOCHS,

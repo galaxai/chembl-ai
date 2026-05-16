@@ -1,10 +1,17 @@
 import os
 
 import pyarrow as pa
+import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import ArrayType, FloatType, LongType, StructField, StructType
 
 from .common import chembl, load_activity_features_df
+
+STANDARD_TYPE = "IC50"
+STANDARD_RELATION = "="
+IQR_MULTIPLIER = 1.5
+QUANTILE_RELATIVE_ERROR = 0.001
+MEDIAN_ACCURACY = 10_000
 
 _GRAPH_SCHEMA = StructType(
     [
@@ -94,14 +101,46 @@ def _graph_df_from_smiles(struct: DataFrame) -> DataFrame:
     )
 
 
+def _filter_pIC_outliers_iqr(activity: DataFrame) -> DataFrame:
+    q1, q3 = activity.approxQuantile(
+        "pIC",
+        [0.25, 0.75],
+        QUANTILE_RELATIVE_ERROR,
+    )
+    iqr = q3 - q1
+    lower = q1 - IQR_MULTIPLIER * iqr
+    upper = q3 + IQR_MULTIPLIER * iqr
+    print(
+        f"Filtering pIC outliers with IQR: q1={q1:.4f}, q3={q3:.4f}, "
+        f"lower={lower:.4f}, upper={upper:.4f}"
+    )
+    return activity.filter((F.col("pIC") >= lower) & (F.col("pIC") <= upper))
+
+
+def _aggregate_labels_by_molregno(df: DataFrame) -> DataFrame:
+    return df.groupBy("molregno").agg(
+        F.min("activity_id").alias("activity_id"),
+        F.first("node_features").alias("node_features"),
+        F.first("edge_index").alias("edge_index"),
+        F.expr(f"percentile_approx(pIC, 0.5, {MEDIAN_ACCURACY})").alias("pIC"),
+        F.first("assay_organism").alias("assay_organism"),
+    )
+
+
 def _load_base_df(spark) -> DataFrame:
     """Load and join activity, assay, and structure parquet sources."""
-    return load_activity_features_df(
+    df = load_activity_features_df(
         spark=spark,
         struct_name="compound_struct",
         struct_to_features=_graph_df_from_smiles,
         feature_cols=["node_features", "edge_index"],
+        activity_filter=lambda df: df.filter(
+            (F.col("standard_type") == STANDARD_TYPE)
+            & (F.col("standard_relation") == STANDARD_RELATION)
+        ),
+        activity_postprocess=_filter_pIC_outliers_iqr,
     )
+    return _aggregate_labels_by_molregno(df)
 
 
 if __name__ == "__main__":
